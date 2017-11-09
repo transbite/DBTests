@@ -35,7 +35,14 @@
     </property>
     <addaction name="actionAdd_Item"/>
    </widget>
+   <widget class="QMenu" name="menuDatabase">
+    <property name="title">
+     <string>Database</string>
+    </property>
+    <addaction name="actionRefresh"/>
+   </widget>
    <addaction name="menuEdit"/>
+   <addaction name="menuDatabase"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -49,6 +56,11 @@
   <action name="actionAdd_Item">
    <property name="text">
     <string>Add Item</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="text">
+    <string>Refresh</string>
    </property>
   </action>
  </widget>
