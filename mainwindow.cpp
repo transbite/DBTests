@@ -4,14 +4,14 @@
 
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QSqlField>
+#include <QSqlRecord>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setupModel();
-    ui->table->setModel(&m_model);
     connect(ui->actionAdd_Item, &QAction::triggered, this, &MainWindow::onAddItem);
     m_addItemDialog = new AddItemDialog(this);
     m_db = QSqlDatabase::addDatabase("QPSQL");
@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         ui->statusBar->showMessage(tr("Database connected!"));
     }
+    setupModel();
+    ui->table->setModel(m_model);
     connect(ui->actionRefresh, &QAction::triggered, this, &MainWindow::onRefreshDB);
 }
 
@@ -56,52 +58,34 @@ void MainWindow::onRefreshDB()
 
 void MainWindow::setupModel()
 {
-    m_model.clear();
-    QStringList headerLabels;
-    headerLabels << "First Name" << "Last Name" << "Id";
-    m_model.setHorizontalHeaderLabels(headerLabels);
+    m_model = new QSqlTableModel(this, m_db);
+    m_model->setTable("Persons");
+//    m_model->setEditStrategy(QSqlTableModel::OnFieldChange);
+    m_model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
+    m_model->setHeaderData(0, Qt::Horizontal, tr("Id"));
+    m_model->setHeaderData(1, Qt::Horizontal, tr("First Name"));
+    m_model->setHeaderData(2, Qt::Horizontal, tr("Last Name"));
+    m_model->select();
 }
 
 void MainWindow::insertQuery(const QString &id, const QString &firstName, const QString &lastName)
 {
-    QSqlQuery query;
-    query.prepare("INSERT INTO Persons VALUES (:id, :firstName, :lastName)");
-    query.bindValue(":id", id.toInt());
-    query.bindValue(":firstName", firstName);
-    query.bindValue(":lastName", lastName);
-    bool ok = query.exec();
-    if(!ok)
-    {
-        QString errorString = query.lastError().databaseText();
-        ui->statusBar->showMessage(tr("SQL Insert query failed - ") + errorString);
-    }
-    else
-    {
-        ui->statusBar->showMessage("SQL Insert query successful!");
-    }
+    QSqlField idField("id", QVariant::Int);
+    QSqlField firstNameField("firstname", QVariant::String);
+    QSqlField lastNameField("lastname",QVariant::String);
+    idField.setValue(id);
+    firstNameField.setValue(firstName);
+    lastNameField.setValue(lastName);
+    QSqlRecord record;
+    record.append(idField);
+    record.append(firstNameField);
+    record.append(lastNameField);
+    m_model->insertRecord(-1, record);
+    m_model->submitAll();
 }
 
 void MainWindow::selectQuery()
 {
-    QSqlQuery query("SELECT * FROM Persons");
-    if(query.lastError().isValid())
-    {
-        QString errorString = query.lastError().databaseText();
-        ui->statusBar->showMessage(tr("SQL Select query failed - ") + errorString);
-        return;
-    }
-    else
-    {
-        ui->statusBar->showMessage("SQL Select query successful!");
-        setupModel();
-    }
-    while(query.next())
-    {
-        QString id = QString("%1").arg(query.value(0).toInt());
-        QString firstName = query.value(1).toString();
-        QString lastName = query.value(2).toString();
-        QList<QStandardItem*> row;
-        row << new QStandardItem(firstName) << new QStandardItem(lastName) << new QStandardItem(id);
-        m_model.appendRow(row);
-    }
+    m_model->select();
 }

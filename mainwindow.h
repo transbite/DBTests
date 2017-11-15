@@ -2,7 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QStandardItemModel>
+//#include <QStandardItemModel>
+#include <QSqlTableModel>
 #include <QSqlDatabase>
 
 namespace Ui {
@@ -30,7 +31,7 @@ private:
 private:
     Ui::MainWindow *ui;
     AddItemDialog *m_addItemDialog;
-    QStandardItemModel m_model;
+    QSqlTableModel *m_model;
     QSqlDatabase m_db;
 
 };
