@@ -27,6 +27,7 @@ private:
     void setupModel();
     void insertQuery(const QString &id, const QString &firstName, const QString &lastName);
     void selectQuery();
+    void readSettings(QString &hostName, QString &databaseName, QString &userName, QString &password);
 
 private:
     Ui::MainWindow *ui;

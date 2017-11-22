@@ -6,6 +6,8 @@
 #include <QSqlError>
 #include <QSqlField>
 #include <QSqlRecord>
+#include <QSettings>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,11 +16,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     connect(ui->actionAdd_Item, &QAction::triggered, this, &MainWindow::onAddItem);
     m_addItemDialog = new AddItemDialog(this);
+    QString hostName;
+    QString databaseName;
+    QString userName;
+    QString password;
+    readSettings(hostName, databaseName, userName, password);
     m_db = QSqlDatabase::addDatabase("QPSQL");
-    m_db.setHostName("");
-    m_db.setDatabaseName("");
-    m_db.setUserName("");
-    m_db.setPassword("");
+    m_db.setHostName(hostName);
+    m_db.setDatabaseName(databaseName);
+    m_db.setUserName(userName);
+    m_db.setPassword(password);
     bool ok = m_db.open();
     if(!ok)
     {
@@ -36,6 +43,17 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::readSettings(QString &hostName, QString &databaseName, QString &userName, QString &password)
+{
+    qDebug() << "App dir path " << qApp->applicationDirPath();
+    QSettings s(qApp->applicationDirPath() + "/DBTests.conf", QSettings::IniFormat);
+    hostName = s.value("HOSTNAME").toString();
+    databaseName = s.value("DATABASENAME").toString();
+    userName = s.value("USERNAME").toString();
+    password = s.value("PASSWORD").toString();
+    qDebug() << "Settings file name " << s.fileName();
 }
 
 void MainWindow::onAddItem()
@@ -73,7 +91,7 @@ void MainWindow::insertQuery(const QString &id, const QString &firstName, const 
 {
     QSqlField idField("id", QVariant::Int);
     QSqlField firstNameField("firstname", QVariant::String);
-    QSqlField lastNameField("lastname",QVariant::String);
+    QSqlField lastNameField("lastname", QVariant::String);
     idField.setValue(id);
     firstNameField.setValue(firstName);
     lastNameField.setValue(lastName);
@@ -82,7 +100,14 @@ void MainWindow::insertQuery(const QString &id, const QString &firstName, const 
     record.append(firstNameField);
     record.append(lastNameField);
     m_model->insertRecord(-1, record);
-    m_model->submitAll();
+    if(!m_model->submitAll())
+    {
+        ui->statusBar->showMessage(tr("Values not submitted to remote database!"));
+    }
+    else
+    {
+        ui->statusBar->showMessage(tr("Values submitted to remote database."));
+    }
 }
 
 void MainWindow::selectQuery()
