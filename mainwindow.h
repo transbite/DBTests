@@ -10,6 +10,7 @@ namespace Ui {
 class MainWindow;
 }
 class AddItemDialog;
+class QActionGroup;
 
 class MainWindow : public QMainWindow
 {
@@ -22,6 +23,7 @@ public:
 private slots:
     void onAddItem();
     void onRefreshDB();
+    void onTableActionsTriggered(QAction *action);
 
 private:
     void setupModel();
@@ -31,6 +33,7 @@ private:
 
 private:
     Ui::MainWindow *ui;
+    QActionGroup *m_tableActions;
     AddItemDialog *m_addItemDialog;
     QSqlTableModel *m_model;
     QSqlDatabase m_db;

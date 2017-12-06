@@ -7,6 +7,7 @@
 #include <QSqlField>
 #include <QSqlRecord>
 #include <QSettings>
+#include <QActionGroup>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -14,6 +15,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    m_tableActions = new QActionGroup(this);
+    m_tableActions->addAction(ui->actionTables);
+    m_tableActions->addAction(ui->actionWorking_Hours);
+    connect(m_tableActions, &QActionGroup::triggered, this, &MainWindow::onTableActionsTriggered);
     connect(ui->actionAdd_Item, &QAction::triggered, this, &MainWindow::onAddItem);
     m_addItemDialog = new AddItemDialog(this);
     QString hostName;
@@ -36,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->statusBar->showMessage(tr("Database connected!"));
     }
     setupModel();
-    ui->table->setModel(m_model);
+    ui->tablePersons->setModel(m_model);
     connect(ui->actionRefresh, &QAction::triggered, this, &MainWindow::onRefreshDB);
 }
 
@@ -113,4 +118,18 @@ void MainWindow::insertQuery(const QString &id, const QString &firstName, const 
 void MainWindow::selectQuery()
 {
     m_model->select();
+}
+
+void MainWindow::onTableActionsTriggered(QAction *action)
+{
+    if(action == ui->actionTables)
+    {
+        //ui->stackedWidget->setCurrentWidget(ui->tablePersons);
+        ui->stackedWidget->setCurrentIndex(0);
+    }
+    if(action == ui->actionWorking_Hours)
+    {
+        //ui->stackedWidget->setCurrentWidget(ui->tableWorkingHours);
+        ui->stackedWidget->setCurrentIndex(1);
+    }
 }
