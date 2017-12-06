@@ -44,7 +44,7 @@
      <x>0</x>
      <y>0</y>
      <width>656</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuEdit">
@@ -52,6 +52,7 @@
      <string>Edit</string>
     </property>
     <addaction name="actionAdd_Item"/>
+    <addaction name="actionAdd_Hours"/>
    </widget>
    <widget class="QMenu" name="menuDatabase">
     <property name="title">
@@ -81,7 +82,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionAdd_Item">
    <property name="text">
-    <string>Add Item</string>
+    <string>Add Person</string>
    </property>
   </action>
   <action name="actionRefresh">
@@ -106,6 +107,11 @@
    </property>
    <property name="text">
     <string>Working Hours</string>
+   </property>
+  </action>
+  <action name="actionAdd_Hours">
+   <property name="text">
+    <string>Add Hours</string>
    </property>
   </action>
  </widget>

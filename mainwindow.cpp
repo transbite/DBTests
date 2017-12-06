@@ -8,6 +8,7 @@
 #include <QSqlRecord>
 #include <QSettings>
 #include <QActionGroup>
+#include <QItemSelectionModel>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -20,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_tableActions->addAction(ui->actionWorking_Hours);
     connect(m_tableActions, &QActionGroup::triggered, this, &MainWindow::onTableActionsTriggered);
     connect(ui->actionAdd_Item, &QAction::triggered, this, &MainWindow::onAddItem);
+    connect(ui->actionAdd_Hours, &QAction::triggered, this, &MainWindow::onAddHours);
     m_addItemDialog = new AddItemDialog(this);
     QString hostName;
     QString databaseName;
@@ -41,7 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->statusBar->showMessage(tr("Database connected!"));
     }
     setupModel();
-    ui->tablePersons->setModel(m_model);
+    ui->tablePersons->setModel(m_personsModel);
+    ui->tableWorkingHours->setModel(m_workingHoursModel);
     connect(ui->actionRefresh, &QAction::triggered, this, &MainWindow::onRefreshDB);
 }
 
@@ -63,6 +66,7 @@ void MainWindow::readSettings(QString &hostName, QString &databaseName, QString 
 
 void MainWindow::onAddItem()
 {
+    m_addItemDialog->setType(AddItemDialog::AddType::ADD_PERSON);
     int r = m_addItemDialog->exec();
     if(r == QDialog::Accepted)
     {
@@ -81,15 +85,23 @@ void MainWindow::onRefreshDB()
 
 void MainWindow::setupModel()
 {
-    m_model = new QSqlTableModel(this, m_db);
-    m_model->setTable("Persons");
+    ui->tablePersons->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_personsModel = new QSqlTableModel(this, m_db);
+    m_personsModel->setTable("Persons");
 //    m_model->setEditStrategy(QSqlTableModel::OnFieldChange);
-    m_model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    m_personsModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
 
-    m_model->setHeaderData(0, Qt::Horizontal, tr("Id"));
-    m_model->setHeaderData(1, Qt::Horizontal, tr("First Name"));
-    m_model->setHeaderData(2, Qt::Horizontal, tr("Last Name"));
-    m_model->select();
+    m_personsModel->setHeaderData(0, Qt::Horizontal, tr("Id"));
+    m_personsModel->setHeaderData(1, Qt::Horizontal, tr("First Name"));
+    m_personsModel->setHeaderData(2, Qt::Horizontal, tr("Last Name"));
+    m_personsModel->select();
+
+    m_workingHoursModel = new QSqlTableModel(this, m_db);
+    m_workingHoursModel->setTable("WorkingHours");
+    m_workingHoursModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    m_workingHoursModel->setHeaderData(0, Qt::Horizontal, tr("Person"));
+    m_workingHoursModel->setHeaderData(1, Qt::Horizontal, tr("Hours"));
+    m_workingHoursModel->select();
 }
 
 void MainWindow::insertQuery(const QString &id, const QString &firstName, const QString &lastName)
@@ -104,8 +116,28 @@ void MainWindow::insertQuery(const QString &id, const QString &firstName, const 
     record.append(idField);
     record.append(firstNameField);
     record.append(lastNameField);
-    m_model->insertRecord(-1, record);
-    if(!m_model->submitAll())
+    m_personsModel->insertRecord(-1, record);
+    if(!m_personsModel->submitAll())
+    {
+        ui->statusBar->showMessage(tr("Values not submitted to remote database!"));
+    }
+    else
+    {
+        ui->statusBar->showMessage(tr("Values submitted to remote database."));
+    }
+}
+
+void MainWindow::insertQuery(const QString &id, const QString &hours)
+{
+    QSqlField idField("id", QVariant::Int);
+    QSqlField hoursField("hours", QVariant::Int);
+    idField.setValue(id);
+    hoursField.setValue(hours);
+    QSqlRecord record;
+    record.append(idField);
+    record.append(hoursField);
+    m_workingHoursModel->insertRecord(-1, record);
+    if(!m_workingHoursModel->submitAll())
     {
         ui->statusBar->showMessage(tr("Values not submitted to remote database!"));
     }
@@ -117,7 +149,8 @@ void MainWindow::insertQuery(const QString &id, const QString &firstName, const 
 
 void MainWindow::selectQuery()
 {
-    m_model->select();
+    m_personsModel->select();
+    m_workingHoursModel->select();
 }
 
 void MainWindow::onTableActionsTriggered(QAction *action)
@@ -131,5 +164,32 @@ void MainWindow::onTableActionsTriggered(QAction *action)
     {
         //ui->stackedWidget->setCurrentWidget(ui->tableWorkingHours);
         ui->stackedWidget->setCurrentIndex(1);
+        ui->tablePersons->selectionModel()->clearSelection();
     }
+}
+
+void MainWindow::onAddHours()
+{
+    QItemSelectionModel *selModel = ui->tablePersons->selectionModel();
+    QModelIndexList selIndexes = selModel->selectedIndexes();
+    if(selIndexes.count() == 0)
+    {
+        return;
+    }
+    QModelIndex index = selIndexes[0];
+    int row = index.row();
+    QString id = m_personsModel->itemData(index.sibling(row, 0))[Qt::EditRole].toString();
+    QString firstName = m_personsModel->itemData(index.sibling(row, 1))[Qt::EditRole].toString();
+    QString lastName = m_personsModel->itemData(index.sibling(row, 2))[Qt::EditRole].toString();
+
+    m_addItemDialog->setType(AddItemDialog::AddType::ADD_HOURS);
+    m_addItemDialog->setData(firstName, lastName, id);
+    int r = m_addItemDialog->exec();
+    if(r == QDialog::Rejected)
+    {
+        return;
+    }
+    QString hours;
+    m_addItemDialog->hours(hours);
+    insertQuery(id, hours);
 }
