@@ -4,6 +4,7 @@
 #include <QMainWindow>
 //#include <QStandardItemModel>
 #include <QSqlTableModel>
+#include <QSqlRelationalTableModel>
 #include <QSqlDatabase>
 
 namespace Ui {
@@ -38,7 +39,7 @@ private:
     QActionGroup *m_tableActions;
     AddItemDialog *m_addItemDialog;
     QSqlTableModel *m_personsModel;
-    QSqlTableModel *m_workingHoursModel;
+    QSqlRelationalTableModel *m_workingHoursModel;
     QSqlDatabase m_db;
 
 };

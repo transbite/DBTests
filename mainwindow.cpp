@@ -96,8 +96,9 @@ void MainWindow::setupModel()
     m_personsModel->setHeaderData(2, Qt::Horizontal, tr("Last Name"));
     m_personsModel->select();
 
-    m_workingHoursModel = new QSqlTableModel(this, m_db);
+    m_workingHoursModel = new QSqlRelationalTableModel(this, m_db);
     m_workingHoursModel->setTable("WorkingHours");
+    m_workingHoursModel->setRelation(0, QSqlRelation("Persons", "id", "lastname"));
     m_workingHoursModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
     m_workingHoursModel->setHeaderData(0, Qt::Horizontal, tr("Person"));
     m_workingHoursModel->setHeaderData(1, Qt::Horizontal, tr("Hours"));
