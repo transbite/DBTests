@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_tableActions = new QActionGroup(this);
     m_tableActions->addAction(ui->actionTables);
     m_tableActions->addAction(ui->actionWorking_Hours);
+    m_tableActions->addAction(ui->actionJoin_Table);
     connect(m_tableActions, &QActionGroup::triggered, this, &MainWindow::onTableActionsTriggered);
     connect(ui->actionAdd_Item, &QAction::triggered, this, &MainWindow::onAddItem);
     connect(ui->actionAdd_Hours, &QAction::triggered, this, &MainWindow::onAddHours);
@@ -45,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setupModel();
     ui->tablePersons->setModel(m_personsModel);
     ui->tableWorkingHours->setModel(m_workingHoursModel);
+    ui->tableWorkingHoursJoinPersons->setModel(m_workingHoursJoinPersonsModel);
     connect(ui->actionRefresh, &QAction::triggered, this, &MainWindow::onRefreshDB);
 }
 
@@ -103,6 +105,15 @@ void MainWindow::setupModel()
     m_workingHoursModel->setHeaderData(0, Qt::Horizontal, tr("Person"));
     m_workingHoursModel->setHeaderData(1, Qt::Horizontal, tr("Hours"));
     m_workingHoursModel->select();
+
+    m_workingHoursJoinPersonsModel = new QSqlQueryModel(this);
+    QSqlQuery query("SELECT workinghours.id, persons.firstname, persons.lastname, workinghours.hours \
+                       FROM workinghours INNER JOIN persons ON workinghours.id=persons.id");
+    m_workingHoursJoinPersonsModel->setQuery(query);
+    m_workingHoursJoinPersonsModel->setHeaderData(0, Qt::Horizontal, tr("Id"));
+    m_workingHoursJoinPersonsModel->setHeaderData(1, Qt::Horizontal, tr("First Name"));
+    m_workingHoursJoinPersonsModel->setHeaderData(2, Qt::Horizontal, tr("Last Name"));
+    m_workingHoursJoinPersonsModel->setHeaderData(3, Qt::Horizontal, tr("Hours"));
 }
 
 void MainWindow::insertQuery(const QString &id, const QString &firstName, const QString &lastName)
@@ -152,6 +163,9 @@ void MainWindow::selectQuery()
 {
     m_personsModel->select();
     m_workingHoursModel->select();
+    QSqlQuery query("SELECT workinghours.id, persons.firstname, persons.lastname, workinghours.hours \
+                       FROM workinghours INNER JOIN persons ON workinghours.id=persons.id");
+    m_workingHoursJoinPersonsModel->setQuery(query);
 }
 
 void MainWindow::onTableActionsTriggered(QAction *action)
@@ -165,6 +179,11 @@ void MainWindow::onTableActionsTriggered(QAction *action)
     {
         //ui->stackedWidget->setCurrentWidget(ui->tableWorkingHours);
         ui->stackedWidget->setCurrentIndex(1);
+        ui->tablePersons->selectionModel()->clearSelection();
+    }
+    if(action == ui->actionJoin_Table)
+    {
+        ui->stackedWidget->setCurrentIndex(2);
         ui->tablePersons->selectionModel()->clearSelection();
     }
 }
